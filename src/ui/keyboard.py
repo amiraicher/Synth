@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import QWidget, QPushButton
-from PySide6.QtCore import Signal, Qt
+from PySide6.QtCore import Signal, Qt, QEvent, QPoint
+from PySide6.QtGui import QTouchEvent, QEventPoint
 
 class VirtualKeyboard(QWidget):
     note_on_signal = Signal(float)
@@ -7,6 +8,8 @@ class VirtualKeyboard(QWidget):
 
     def __init__(self):
         super().__init__()
+        self.setAttribute(Qt.WA_AcceptTouchEvents, True)
+        
         # Remove layout, we will use absolute positioning (resizeEvent)
         # self.layout = QHBoxLayout(self) 
         
@@ -175,3 +178,87 @@ class VirtualKeyboard(QWidget):
 
     def keyReleaseEvent(self, event):
         self.handle_key_release(event.key())
+
+    def event(self, event):
+        """Handle Touch Events for Multi-Touch Support."""
+        t = event.type()
+        if t in (QEvent.TouchBegin, QEvent.TouchUpdate, QEvent.TouchEnd):
+            self._process_touch_event(event)
+            return True
+        return super().event(event)
+
+    def _process_touch_event(self, event):
+        # Map touch points to keys
+        # We need to track which touch ID is holding which note to handle slides (glissando)
+        if not hasattr(self, 'touch_map'):
+            self.touch_map = {} # touch_id -> freq
+
+        points = event.points()
+        
+        active_ids = set()
+
+        for point in points:
+            pid = point.id()
+            active_ids.add(pid)
+            state = point.state()
+            
+            if state == QEventPoint.Pressed or state == QEventPoint.Updated or state == QEventPoint.Stationary:
+                # Find which key is under this point
+                # Use globalPosition() to be safe and map to local
+                pos = point.globalPosition()
+                local_pos = self.mapFromGlobal(pos.toPoint())
+                
+                found_freq = None
+                
+                # Check Black Keys First (Z-Order)
+                for btn, _ in self.black_buttons:
+                    if btn.geometry().contains(local_pos):
+                        # Find freq for this btn
+                        for f, b in self.buttons_by_freq.items():
+                            if b == btn:
+                                found_freq = f
+                                break
+                        break
+                
+                # Check White Keys if no black key found
+                if found_freq is None:
+                    for btn in self.white_buttons:
+                        if btn.geometry().contains(local_pos):
+                             for f, b in self.buttons_by_freq.items():
+                                if b == btn:
+                                    found_freq = f
+                                    break
+                             break
+                
+                # Logic for status change
+                original_freq = self.touch_map.get(pid)
+                
+                if found_freq != original_freq:
+                    # If we were playing a note with this finger, stop it
+                    if original_freq is not None:
+                        self.note_off_signal.emit(original_freq)
+                        if original_freq in self.buttons_by_freq:
+                            self.buttons_by_freq[original_freq].setDown(False)
+                    
+                    # Start new note
+                    if found_freq is not None:
+                        self.note_on_signal.emit(found_freq)
+                        if found_freq in self.buttons_by_freq:
+                            self.buttons_by_freq[found_freq].setDown(True)
+                        self.touch_map[pid] = found_freq
+                    else:
+                        # Finger moved off any key
+                        if pid in self.touch_map:
+                            del self.touch_map[pid]
+
+            elif state == QEventPoint.Released:
+                # Note Off
+                freq = self.touch_map.get(pid)
+                if freq is not None:
+                    self.note_off_signal.emit(freq)
+                    if freq in self.buttons_by_freq:
+                        self.buttons_by_freq[freq].setDown(False)
+                    del self.touch_map[pid]
+        
+        # Cleanup any stale IDs (though Released event should handle it)
+        # In some cases, if a touch is cancelled, we might need to verify.
