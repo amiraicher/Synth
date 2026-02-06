@@ -35,7 +35,7 @@ Built with PySide6, orchestrating user interaction and visual feedback.
     - Composes `SynthPanel`, `LooperPanel`, `Visualizer`, and `VirtualKeyboard`.
     - Handles global key events and routes them to the keyboard.
 - **`keyboard.py`**: `VirtualKeyboard` widget.
-    - Visualizes key states.
+    - Visualizes key states using manual "piano" layout (overlapping keys).
     - Emits signals (`note_on`, `note_off`) connected to the `AudioEngine`.
 - **`visualizer.py`**: High-performance plotting.
     - Pulls data from `AudioEngine.get_buffer()` on a UI timer/interval.
