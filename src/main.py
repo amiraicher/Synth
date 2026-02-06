@@ -13,8 +13,15 @@ def main():
     
     app = QApplication(sys.argv)
     
-    # Set Fusion Style for consistent dark theme base
-    app.setStyle("Fusion")
+    # Load and apply QSS Stylesheet
+    style_file = os.path.join(os.path.dirname(__file__), 'assets', 'styles', 'theme.qss')
+    try:
+        with open(style_file, "r") as f:
+            app.setStyleSheet(f.read())
+    except FileNotFoundError:
+        print(f"Warning: Stylesheet not found at {style_file}")
+        # Fallback to Fusion if stylesheet is missing
+        app.setStyle("Fusion")
     
     window = MainApplication()
     window.show()

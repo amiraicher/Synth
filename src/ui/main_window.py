@@ -24,27 +24,11 @@ class MainApplication(QMainWindow):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
         
-        # Styling
-        self.setStyleSheet("""
-            QMainWindow {
-                background-color: #101014;
-            }
-            QWidget {
-                color: #00f0ff;
-                font-family: 'Consolas', 'Courier New', monospace;
-                font-size: 12px;
-            }
-            QDockWidget {
-                titlebar-close-icon: url(close.png);
-                titlebar-normal-icon: url(float.png);
-            }
-            QDockWidget::title {
-                text-align: left;
-                background: #1a1a20;
-                padding-left: 5px;
-                border: 1px solid #00f0ff;
-            }
-        """)
+        main_layout.setSpacing(0)
+        
+        # Styling allows global theme.qss to take effect without conflicts
+        # self.setStyleSheet(...) code removed
+
 
         # Top Section: Synth Panel & Visualizer
         top_layout = QHBoxLayout()

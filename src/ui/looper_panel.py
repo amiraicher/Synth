@@ -9,7 +9,7 @@ class TimelineWidget(QWidget):
         super().__init__()
         self.setMinimumWidth(1000)
         self.setMinimumHeight(300)
-        self.setStyleSheet("background-color: #15151a;")
+        # self.setStyleSheet("background-color: #15151a;") # Removed for global theme
         self.clips = [] # List of (track_index, start_time, duration, color)
 
     def paintEvent(self, event):
@@ -52,25 +52,8 @@ class TrackControlWidget(QFrame):
         self.engine = AudioEngine()
         self.setFrameShape(QFrame.StyledPanel)
         self.setFixedHeight(60) # Match timeline row height
-        self.setStyleSheet("""
-            QFrame {
-                background-color: #202025;
-                border: 1px solid #303035;
-                border-right: 2px solid #00f0ff;
-            }
-            QLabel { color: #fff; font-weight: bold; }
-            QPushButton {
-                background-color: #303035;
-                color: #aaa;
-                border: none;
-                border-radius: 2px;
-                font-size: 10px;
-            }
-            QPushButton:checked {
-                background-color: #00f0ff;
-                color: #000;
-            }
-        """)
+        # Stylesheet removed to use global theme.qss
+
         
         layout = QHBoxLayout(self)
         layout.setContentsMargins(5, 5, 5, 5)
@@ -81,6 +64,9 @@ class TrackControlWidget(QFrame):
         self.rec_btn = QPushButton("R")
         self.rec_btn.setCheckable(True)
         self.rec_btn.setFixedWidth(20)
+        # Inline style for checked state can remain if specific, or better controlled via QSS selection
+        # For now, let's keep functional color but move base style to QSS.
+        self.rec_btn.setObjectName("recBtn")
         self.rec_btn.setStyleSheet("QPushButton:checked { background-color: #ff0055; color: white; }")
         self.rec_btn.toggled.connect(lambda: self.engine.looper_toggle_record(self.track_index))
         
@@ -110,7 +96,7 @@ class LooperPanel(QWidget):
         # Toolbar (Transport)
         toolbar = QFrame()
         toolbar.setFixedHeight(40)
-        toolbar.setStyleSheet("background-color: #1a1a20; border-bottom: 1px solid #303035;")
+        # toolbar.setStyleSheet("background-color: #1a1a20; border-bottom: 1px solid #303035;")
         tb_layout = QHBoxLayout(toolbar)
         
         self.play_btn = QPushButton("PLAY")
@@ -124,14 +110,7 @@ class LooperPanel(QWidget):
         
         for btn in [self.play_btn, self.stop_btn, self.rec_global_btn]:
             btn.setFixedSize(60, 25)
-            btn.setStyleSheet("""
-                QPushButton {
-                    background-color: #303035; 
-                    color: #00f0ff; 
-                    border: 1px solid #00f0ff;
-                }
-                QPushButton:pressed { background-color: #00f0ff; color: black; }
-            """)
+            # Stylesheet removed
             tb_layout.addWidget(btn)
         
         tb_layout.addStretch()
@@ -140,7 +119,7 @@ class LooperPanel(QWidget):
         # Splitter for Track List vs Timeline
         splitter = QSplitter(Qt.Horizontal)
         splitter.setHandleWidth(1)
-        splitter.setStyleSheet("QSplitter::handle { background-color: #00f0ff; }")
+        # splitter.setStyleSheet("QSplitter::handle { background-color: #00f0ff; }")
         
         # Track List Container
         self.track_list_widget = QWidget()

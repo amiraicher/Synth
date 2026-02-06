@@ -1,0 +1,177 @@
+/* Global Main Window & Widget Defaults */
+QMainWindow {
+    background-color: #101014;
+    color: #00f0ff;
+}
+
+QWidget {
+    background-color: #101014;
+    color: #00f0ff;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 12px;
+}
+
+/* Panels (Synth, Looper, etc) */
+QFrame, QGroupBox {
+    background-color: #1a1a20;
+    border: 1px solid #00f0ff;
+    border-radius: 4px;
+    margin-top: 20px; /* space for title */
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    left: 10px;
+    padding: 0 3px;
+    color: #00f0ff;
+    background-color: #1a1a20; /* Match panel background */
+    font-weight: bold;
+}
+
+/* Push Buttons - Cyberpunk Feel */
+QPushButton {
+    background-color: #303035;
+    border: 1px solid #00f0ff;
+    border-radius: 2px;
+    padding: 5px 15px;
+    color: #00f0ff;
+    font-weight: bold;
+}
+
+QPushButton:hover {
+    background-color: #404045;
+    border: 1px solid #ffffff;
+    color: #ffffff;
+}
+
+QPushButton:pressed {
+    background-color: #00f0ff;
+    color: #101014;
+    border: 1px solid #00f0ff;
+}
+
+QPushButton:checked {
+    background-color: #00f0ff;
+    color: #101014;
+}
+
+/* Specific Button Overrides (via ObjectName if needed, or generic here) */
+/* Recording Button Style (Generic toggle behavior covered above, but can be specific) */
+
+/* Sliders - Neon */
+QSlider::groove:vertical {
+    background: #1a1a20;
+    width: 6px;
+    border-radius: 3px;
+    border: 1px solid #303035;
+}
+
+QSlider::handle:vertical {
+    background: #00f0ff;
+    height: 10px;
+    margin: 0 -4px;
+    border-radius: 5px;
+}
+
+QSlider::handle:vertical:hover {
+    background: #ffffff;
+}
+
+QSlider::groove:horizontal {
+    background: #1a1a20;
+    height: 6px;
+    border-radius: 3px;
+    border: 1px solid #303035;
+}
+
+QSlider::handle:horizontal {
+    background: #00f0ff;
+    width: 10px;
+    margin: -4px 0;
+    border-radius: 5px;
+}
+
+QSlider::handle:horizontal:hover {
+    background: #ffffff;
+}
+
+/* Labels */
+QLabel {
+    color: #00f0ff;
+    background-color: transparent;
+    font-weight: bold;
+}
+
+/* Combo Boxes */
+QComboBox {
+    background-color: #101014;
+    border: 1px solid #00f0ff;
+    border-radius: 2px;
+    padding: 2px 18px 2px 3px;
+    min-width: 6em;
+    selection-background-color: #303035;
+    color: #00f0ff;
+}
+
+QComboBox:hover {
+    border: 1px solid #ffffff;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 15px;
+    border-left-width: 1px;
+    border-left-color: #00f0ff;
+    border-left-style: solid; 
+}
+
+/* Scroll Bars (for Looper Panel) */
+QScrollBar:vertical {
+    border: none;
+    background: #101014;
+    width: 10px;
+    margin: 0px 0px 0px 0px;
+}
+QScrollBar::handle:vertical {
+    background: #303035;
+    min-height: 20px;
+    border-radius: 5px;
+}
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    border: none;
+    background: none;
+}
+
+QScrollBar:horizontal {
+    border: none;
+    background: #101014;
+    height: 10px;
+    margin: 0px 0px 0px 0px;
+}
+QScrollBar::handle:horizontal {
+    background: #303035;
+    min-width: 20px;
+    border-radius: 5px;
+}
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+    border: none;
+    background: none;
+}
+
+/* Splitter */
+QSplitter::handle {
+    background-color: #00f0ff;
+}
+
+/* Dock Widgets (if used) */
+QDockWidget {
+    color: #00f0ff;
+}
+QDockWidget::title {
+    text-align: left;
+    background: #1a1a20;
+    padding-left: 5px;
+    border: 1px solid #00f0ff;
+}

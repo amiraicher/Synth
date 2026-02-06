@@ -50,35 +50,9 @@ class SynthPanel(QWidget):
         main_layout.addWidget(env_group)
         
         # Styling
-        self.setStyleSheet("""
-            QGroupBox {
-                border: 1px solid #00f0ff;
-                margin-top: 20px;
-                color: #00f0ff;
-                font-weight: bold;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 3px 0 3px;
-            }
-            QLabel { color: #00a8ff; }
-            QSlider::groove:vertical {
-                background: #1a1a20;
-                width: 6px;
-                border-radius: 3px;
-            }
-            QSlider::handle:vertical {
-                background: #00f0ff;
-                height: 10px;
-                margin: 0 -4px;
-                border-radius: 5px;
-            }
-            QDial {
-                background-color: #101014; 
-                /* QDial styling is tricky in CSS only, might keep default or basic */
-            }
-        """)
+        
+        # Styling removed to use global theme.qss
+
 
     def create_slider(self, label, min_val, max_val, default, callback):
         layout = QVBoxLayout()
