@@ -12,7 +12,13 @@ QWidget {
 }
 
 /* Panels (Synth, Looper, etc) */
-QFrame, QGroupBox {
+QFrame {
+    background-color: #1a1a20;
+    border: 1px solid #00f0ff;
+    border-radius: 4px;
+}
+
+QGroupBox {
     background-color: #1a1a20;
     border: 1px solid #00f0ff;
     border-radius: 4px;
