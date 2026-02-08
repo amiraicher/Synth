@@ -1,118 +1,165 @@
 import numpy as np
 from enum import Enum
-from src.utils.clock import GlobalClock
 
-class LoopState(Enum):
-    STOPPED = 0
+class PodState(Enum):
+    EMPTY = 0
     RECORDING = 1
     PLAYING = 2
+    PAUSED = 3
+    STOPPED = 4
 
-class LooperTrack:
-    def __init__(self, name="Track", sample_rate=44100):
-        self.name = name
+class LooperPod:
+    def __init__(self, index, sample_rate=44100):
+        self.index = index
+        self.sample_rate = sample_rate
         self.buffer = None
-        self.state = LoopState.STOPPED
-        self.is_muted = False
-        self.volume = 1.0
-        
-        # Playback/Recording heads
-        self.head_position = 0
+        self.state = PodState.EMPTY
+        self.play_head = 0
+        self.is_repeat = True  # True = Loop, False = One-Shot
         
         # Temp buffer for recording
         self.rec_buffer_list = []
 
+    def trigger(self):
+        """
+        Main trigger action (Pad Click).
+        Empty -> Recording
+        Recording -> Playing
+        Playing -> Overdub (Not yet implemented) OR Retrigger? 
+        Let's stick to Record -> Play -> Retrigger for now.
+        Use Stop for stopping.
+        Use Pause for pausing.
+        """
+        if self.state == PodState.EMPTY:
+            self.start_recording()
+        elif self.state == PodState.RECORDING:
+            self.finish_recording()
+        elif self.state == PodState.PLAYING:
+            # Retrigger
+            self.play_head = 0
+        elif self.state == PodState.PAUSED:
+            self.resume_playback()
+        elif self.state == PodState.STOPPED:
+            self.start_playback()
+
+    def start_recording(self):
+        self.state = PodState.RECORDING
+        self.rec_buffer_list = []
+        self.play_head = 0
+
+    def finish_recording(self):
+        if self.rec_buffer_list:
+            self.buffer = np.concatenate(self.rec_buffer_list)
+            self.rec_buffer_list = []
+            self.state = PodState.PLAYING
+            self.play_head = 0
+        else:
+            # Nothing recorded
+            self.state = PodState.EMPTY
+
+    def start_playback(self):
+        if self.buffer is not None:
+            self.state = PodState.PLAYING
+            self.play_head = 0
+
+    def resume_playback(self):
+        if self.buffer is not None:
+            self.state = PodState.PLAYING
+            # Keep play_head
+
+    def stop(self):
+        if self.state != PodState.EMPTY:
+            self.state = PodState.STOPPED
+            self.play_head = 0
+            
+    def pause(self):
+        if self.state == PodState.PLAYING:
+            self.state = PodState.PAUSED
+        elif self.state == PodState.PAUSED:
+            self.resume_playback()
+
+    def clear(self):
+        self.buffer = None
+        self.state = PodState.EMPTY
+        self.play_head = 0
+        self.rec_buffer_list = []
+
+    def set_repeat(self, enabled):
+        self.is_repeat = enabled
+
+    def process(self, input_chunk, num_samples):
+        output = np.zeros(num_samples)
+
+        if self.state == PodState.RECORDING:
+            # Record input
+            # Copy to avoid reference issues
+            self.rec_buffer_list.append(np.copy(input_chunk))
+            # Passthrough? Usually loopers play thru or mute. 
+            # Let's simple pass thru happens at mixer level if input is monitored.
+            # Here we just return 0.
+            
+        elif self.state == PodState.PLAYING and self.buffer is not None:
+            buf_len = len(self.buffer)
+            if buf_len > 0:
+                pos = self.play_head
+                
+                # How much can we read?
+                available = buf_len - pos
+                
+                if available >= num_samples:
+                    chunk = self.buffer[pos:pos+num_samples]
+                    output += chunk
+                    self.play_head += num_samples
+                else:
+                    # End of buffer reached
+                    # Part 1
+                    part1 = self.buffer[pos:]
+                    output[:available] += part1
+                    
+                    if self.is_repeat:
+                        # Wrap around
+                        remaining = num_samples - available
+                        # Handle case where remaining > buf_len (very short loop)
+                        # For simplicity, assume loop > block size (otherwise utilize mod)
+                        # But to be safe:
+                        read_ptr = 0
+                        while remaining > 0:
+                            can_take = min(remaining, buf_len)
+                            output[available:available+can_take] += self.buffer[:can_take]
+                            available += can_take
+                            remaining -= can_take
+                            read_ptr = can_take % buf_len # Update pointer if we consumed exactly logic...
+                            # Actually simplified:
+                            # play_head should wrap.
+                        
+                        self.play_head = (pos + num_samples) % buf_len
+                    else:
+                        # One shot: stop after part1
+                        self.play_head = 0
+                        self.state = PodState.STOPPED
+
+        return output
+
+
 class Looper:
     def __init__(self, sample_rate=44100):
         self.sample_rate = sample_rate
-        self.clock = GlobalClock(sample_rate)
-        self.tracks = [LooperTrack(f"Track {i+1}", sample_rate) for i in range(4)]
-        self.is_playing = False
-        
-        # Transport
-        self.current_loop_length_samples = 0
-        self.master_head = 0
+        self.pods = [LooperPod(i, sample_rate) for i in range(10)]
 
-    def toggle_record(self, track_index):
-        track = self.tracks[track_index]
-        if track.state == LoopState.RECORDING:
-            # Stop Recording -> PLAYING
-            track.state = LoopState.PLAYING
-            # Finalize buffer
-            if track.rec_buffer_list:
-                full_rec = np.concatenate(track.rec_buffer_list)
-                track.buffer = full_rec
-                # For simplicity, assume loop length is defined by first track or global
-                if self.current_loop_length_samples == 0:
-                    self.current_loop_length_samples = len(track.buffer)
-                    
-                track.rec_buffer_list = []
-                # Normalize length? Or logic to handle differing lengths?
-                # Simplest: Fixed loop length or master length
-        else:
-            # Start Recording
-            track.state = LoopState.RECORDING
-            track.rec_buffer_list = []
-            # If logic requires defined length, we might wrap
-            # If free running, we record until toggle
-            
     def process(self, input_audio, num_samples):
-        # Input audio is what we are recording (e.g. from Synth)
-        output = np.zeros(num_samples)
+        # Mix all pods
+        mixed_output = np.zeros(num_samples)
         
-        if not self.is_playing:
-            # If not playing global transport, we might still record?
-            # Let's simple: Transport Play must be active to move heads
-            pass
+        for pod in self.pods:
+            mixed_output += pod.process(input_audio, num_samples)
+            
+        return mixed_output
 
-        # If master transport playing
-        if self.is_playing:
-            # Advance master
-            # Wrap logic
-            limit = self.current_loop_length_samples if self.current_loop_length_samples > 0 else 999999999
+    def stop_all(self):
+        for pod in self.pods:
+            pod.stop()
             
-            # Simple per-sample or block logic
-            # Block logic:
-            
-            # For each track
-            for track in self.tracks:
-                if track.is_muted:
-                    continue
-                    
-                if track.state == LoopState.RECORDING:
-                    # Append input to record buffer
-                    # We need to copy input_audio
-                    track.rec_buffer_list.append(np.copy(input_audio))
-                    
-                elif track.state == LoopState.PLAYING and track.buffer is not None:
-                    # Add to output
-                    # Complex wrapping logic if block crosses loop boundary
-                    # Simplified: Assume loop buffer is long enough or handle wrap
-                    buf_len = len(track.buffer)
-                    if buf_len == 0: continue
-                    
-                    # Read pointer
-                    pos = self.master_head % buf_len
-                    
-                    # If block fits remaining
-                    available = buf_len - pos
-                    
-                    if available >= num_samples:
-                        chunk = track.buffer[pos:pos+num_samples]
-                        output += chunk * track.volume
-                    else:
-                        # Wrap around
-                        part1 = track.buffer[pos:]
-                        part2 = track.buffer[0:num_samples-available]
-                        output[:available] += part1 * track.volume
-                        output[available:] += part2 * track.volume
-            
-            self.master_head += num_samples
-            
-        return output
-
-    def start_transport(self):
-        self.is_playing = True
-    
-    def stop_transport(self):
-        self.is_playing = False
-        self.master_head = 0
+    def get_pod_state(self, index):
+        if 0 <= index < len(self.pods):
+            return self.pods[index].state
+        return PodState.EMPTY

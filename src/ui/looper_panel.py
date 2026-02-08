@@ -1,87 +1,91 @@
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QScrollArea, 
-                               QPushButton, QLabel, QFrame, QSplitter)
-from PySide6.QtCore import Qt, QSize
-from PySide6.QtGui import QPainter, QColor, QPen, QBrush
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QFrame, QGridLayout, QCheckBox)
+from PySide6.QtCore import Qt, QTimer
 from ..audio.engine import AudioEngine
+from ..audio.looper import PodState
 
-class TimelineWidget(QWidget):
-    def __init__(self):
+class PodWidget(QFrame):
+    def __init__(self, index):
         super().__init__()
-        self.setMinimumWidth(1000)
-        self.setMinimumHeight(300)
-        # self.setStyleSheet("background-color: #15151a;") # Removed for global theme
-        self.clips = [] # List of (track_index, start_time, duration, color)
-
-    def paintEvent(self, event):
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing)
-        
-        # Draw Grid
-        pen = QPen(QColor("#303035"))
-        pen.setStyle(Qt.DotLine)
-        painter.setPen(pen)
-        
-        # Vertical grid lines (Time)
-        # Assuming 100px per bar for now
-        for x in range(0, self.width(), 100):
-            painter.drawLine(x, 0, x, self.height())
-            
-        # Horizontal grid lines (Tracks)
-        # Assuming 60px height per track
-        track_height = 60
-        for y in range(0, self.height(), track_height):
-            painter.drawLine(0, y, self.width(), y)
-            
-        # Draw Clips using placeholders
-        # We will add mechanics later
-        # Example ghost clip
-        painter.setPen(Qt.NoPen)
-        painter.setBrush(QBrush(QColor("#00f0ff40")))
-        painter.drawRoundedRect(50, 10, 200, 40, 5, 5)
-        
-        # Playhead
-        # TODO: Get position from engine
-        painter.setPen(QPen(QColor("#ff0055"), 2))
-        painter.drawLine(100, 0, 100, self.height())
-
-
-class TrackControlWidget(QFrame):
-    def __init__(self, track_index, track_name):
-        super().__init__()
-        self.track_index = track_index
+        self.index = index
         self.engine = AudioEngine()
         self.setFrameShape(QFrame.StyledPanel)
-        self.setFixedHeight(60) # Match timeline row height
-        # Stylesheet removed to use global theme.qss
+        self.setFixedSize(120, 140)
+        
+        layout = QVBoxLayout(self)
+        layout.setSpacing(5)
+        layout.setContentsMargins(5,5,5,5)
+        
+        # Header
+        self.lbl_id = QLabel(f"POD {index+1}")
+        self.lbl_id.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.lbl_id)
+        
+        # Main Trigger Pad
+        self.trigger_btn = QPushButton("EMPTY")
+        self.trigger_btn.setFixedSize(100, 60)
+        self.trigger_btn.clicked.connect(self.on_trigger)
+        layout.addWidget(self.trigger_btn)
+        
+        # Controls Row
+        ctrl_layout = QHBoxLayout()
+        
+        self.btn_pause = QPushButton("||")
+        self.btn_pause.setFixedSize(30, 25)
+        self.btn_pause.setToolTip("Pause/Resume")
+        self.btn_pause.clicked.connect(self.on_pause)
+        
+        self.btn_stop = QPushButton("⬛")
+        self.btn_stop.setFixedSize(30, 25)
+        self.btn_stop.setToolTip("Stop")
+        self.btn_stop.clicked.connect(self.on_stop)
+        
+        ctrl_layout.addWidget(self.btn_pause)
+        ctrl_layout.addWidget(self.btn_stop)
+        layout.addLayout(ctrl_layout)
+        
+        # Repeat Toggle
+        self.chk_repeat = QCheckBox("Repeat")
+        self.chk_repeat.setChecked(True) # Default Loop
+        self.chk_repeat.toggled.connect(self.on_repeat_toggled)
+        layout.addWidget(self.chk_repeat)
+        
+        # Update Timer (Poll state for UI update)
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_ui_state)
+        self.timer.start(100) # 10fps update
+        
+    def on_trigger(self):
+        self.engine.looper_trigger(self.index)
+        self.update_ui_state() # Immediate update attempt
+        
+    def on_pause(self):
+        self.engine.looper_pause(self.index)
+        
+    def on_stop(self):
+        self.engine.looper_stop(self.index)
 
+    def on_repeat_toggled(self, checked):
+        self.engine.looper_set_repeat(self.index, checked)
         
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(5, 5, 5, 5)
+    def update_ui_state(self):
+        state = self.engine.looper_get_state(self.index)
+        if state is None: return
         
-        self.name_lbl = QLabel(track_name)
-        layout.addWidget(self.name_lbl, stretch=1)
-        
-        self.rec_btn = QPushButton("R")
-        self.rec_btn.setCheckable(True)
-        self.rec_btn.setFixedWidth(20)
-        # Inline style for checked state can remain if specific, or better controlled via QSS selection
-        # For now, let's keep functional color but move base style to QSS.
-        self.rec_btn.setObjectName("recBtn")
-        self.rec_btn.setStyleSheet("QPushButton:checked { background-color: #ff0055; color: white; }")
-        self.rec_btn.toggled.connect(lambda: self.engine.looper_toggle_record(self.track_index))
-        
-        self.mute_btn = QPushButton("M")
-        self.mute_btn.setCheckable(True)
-        self.mute_btn.setFixedWidth(20)
-        self.mute_btn.setStyleSheet("QPushButton:checked { background-color: #ffcc00; color: black; }")
-        
-        self.solo_btn = QPushButton("S")
-        self.solo_btn.setCheckable(True)
-        self.solo_btn.setFixedWidth(20)
-        
-        layout.addWidget(self.rec_btn)
-        layout.addWidget(self.mute_btn)
-        layout.addWidget(self.solo_btn)
+        if state == PodState.EMPTY:
+            self.trigger_btn.setText("REC")
+            self.trigger_btn.setStyleSheet("background-color: #333333; color: white;")
+        elif state == PodState.RECORDING:
+            self.trigger_btn.setText("REC...")
+            self.trigger_btn.setStyleSheet("background-color: #ff3333; color: white;")
+        elif state == PodState.PLAYING:
+            self.trigger_btn.setText("PLAYING")
+            self.trigger_btn.setStyleSheet("background-color: #33ff33; color: black;")
+        elif state == PodState.PAUSED:
+            self.trigger_btn.setText("PAUSED")
+            self.trigger_btn.setStyleSheet("background-color: #ffff33; color: black;")
+        elif state == PodState.STOPPED:
+            self.trigger_btn.setText("PLAY")
+            self.trigger_btn.setStyleSheet("background-color: #3333ff; color: white;")
 
 
 class LooperPanel(QWidget):
@@ -90,63 +94,31 @@ class LooperPanel(QWidget):
         self.engine = AudioEngine()
         
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.setSpacing(0)
         
-        # Toolbar (Transport)
-        toolbar = QFrame()
-        toolbar.setFixedHeight(40)
-        # toolbar.setStyleSheet("background-color: #1a1a20; border-bottom: 1px solid #303035;")
-        tb_layout = QHBoxLayout(toolbar)
+        # Header / Global Controls
+        header = QHBoxLayout()
+        header.addWidget(QLabel("<h2>LOOPER PODS</h2>"))
+        header.addStretch()
         
-        self.play_btn = QPushButton("PLAY")
-        self.play_btn.clicked.connect(self.engine.transport_play)
+        self.btn_stop_all = QPushButton("STOP ALL")
+        self.btn_stop_all.setFixedSize(100, 30)
+        self.btn_stop_all.setStyleSheet("background-color: #cc0000; color: white; font-weight: bold;")
+        self.btn_stop_all.clicked.connect(self.engine.looper_stop_all)
+        header.addWidget(self.btn_stop_all)
         
-        self.stop_btn = QPushButton("STOP")
-        self.stop_btn.clicked.connect(self.engine.transport_stop)
+        main_layout.addLayout(header)
         
-        self.rec_global_btn = QPushButton("REC")
-        self.rec_global_btn.clicked.connect(self.engine.transport_global_record)
+        # Grid of Pods
+        grid = QGridLayout()
+        grid.setSpacing(10)
         
-        for btn in [self.play_btn, self.stop_btn, self.rec_global_btn]:
-            btn.setFixedSize(60, 25)
-            # Stylesheet removed
-            tb_layout.addWidget(btn)
-        
-        tb_layout.addStretch()
-        main_layout.addWidget(toolbar)
-        
-        # Splitter for Track List vs Timeline
-        splitter = QSplitter(Qt.Horizontal)
-        splitter.setHandleWidth(1)
-        # splitter.setStyleSheet("QSplitter::handle { background-color: #00f0ff; }")
-        
-        # Track List Container
-        self.track_list_widget = QWidget()
-        self.track_layout = QVBoxLayout(self.track_list_widget)
-        self.track_layout.setContentsMargins(0, 0, 0, 0)
-        self.track_layout.setSpacing(1)
-        self.track_layout.setAlignment(Qt.AlignTop)
-        
-        # Add Dummy Tracks
-        for i in range(4):
-            self.track_layout.addWidget(TrackControlWidget(i, f"Track {i+1}"))
+        self.pods = []
+        for i in range(10):
+            pod = PodWidget(i)
+            row = i // 5
+            col = i % 5
+            grid.addWidget(pod, row, col)
+            self.pods.append(pod)
             
-        # Scroll Area for Tracks
-        track_scroll = QScrollArea()
-        track_scroll.setWidgetResizable(True)
-        track_scroll.setWidget(self.track_list_widget)
-        track_scroll.setFixedWidth(200)
-        track_scroll.setStyleSheet("border: none;")
-        
-        # Timeline
-        self.timeline = TimelineWidget()
-        timeline_scroll = QScrollArea()
-        timeline_scroll.setWidgetResizable(True) # Only resize if widget is smaller than view
-        timeline_scroll.setWidget(self.timeline) # Timeline can grow larger
-        timeline_scroll.setStyleSheet("border: none;")
-        
-        splitter.addWidget(track_scroll)
-        splitter.addWidget(timeline_scroll)
-        
-        main_layout.addWidget(splitter)
+        main_layout.addLayout(grid)
+        main_layout.addStretch()

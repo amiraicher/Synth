@@ -112,22 +112,38 @@ class AudioEngine:
             return np.copy(self.current_buffer)
 
     # Looper Controls
-    def looper_toggle_record(self, track_index):
+    def looper_trigger(self, pod_index):
         if self.looper:
-            self.looper.toggle_record(track_index)
+            # Bounds check managed by looper or panel, but safe to check here
+            if 0 <= pod_index < len(self.looper.pods):
+                self.looper.pods[pod_index].trigger()
+                logging.info(f"Looper Pod {pod_index} Triggered. New State: {self.looper.pods[pod_index].state}")
 
-    def transport_play(self):
+    def looper_stop(self, pod_index):
         if self.looper:
-            self.looper.start_transport()
-            
-    def transport_stop(self):
+            if 0 <= pod_index < len(self.looper.pods):
+                self.looper.pods[pod_index].stop()
+                logging.info(f"Looper Pod {pod_index} Stopped.")
+
+    def looper_pause(self, pod_index):
         if self.looper:
-            self.looper.stop_transport()
-            
-    def transport_global_record(self):
-        # Global record might mean "Arm all" or "Record Master"
-        # For this lite version, maybe just toggle Track 1 record? 
-        # Or just start transport? 
-        # Let's assume Global Record just starts transport and arms selected??
-        # For now, just print
-        print("Global Record Triggered")
+            if 0 <= pod_index < len(self.looper.pods):
+                self.looper.pods[pod_index].pause()
+                logging.info(f"Looper Pod {pod_index} toggle Pause.")
+
+    def looper_set_repeat(self, pod_index, enabled):
+        if self.looper:
+            if 0 <= pod_index < len(self.looper.pods):
+                self.looper.pods[pod_index].set_repeat(enabled)
+                logging.info(f"Looper Pod {pod_index} Repeat: {enabled}")
+
+    def looper_stop_all(self):
+        if self.looper:
+            self.looper.stop_all()
+            logging.info("Looper Stop All")
+
+    def looper_get_state(self, pod_index):
+        if self.looper:
+             if 0 <= pod_index < len(self.looper.pods):
+                 return self.looper.pods[pod_index].state
+        return None
