@@ -125,6 +125,12 @@ class AudioEngine:
                 self.looper.pods[pod_index].stop()
                 logging.info(f"Looper Pod {pod_index} Stopped.")
 
+    def looper_record(self, pod_index):
+        if self.looper:
+            if 0 <= pod_index < len(self.looper.pods):
+                self.looper.pods[pod_index].record()
+                logging.info(f"Looper Pod {pod_index} Record (Forced).")
+
     def looper_pause(self, pod_index):
         if self.looper:
             if 0 <= pod_index < len(self.looper.pods):

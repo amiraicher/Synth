@@ -29,6 +29,12 @@ class PodWidget(QFrame):
         # Controls Row
         ctrl_layout = QHBoxLayout()
         
+        self.btn_record = QPushButton("●")
+        self.btn_record.setFixedSize(30, 25)
+        self.btn_record.setToolTip("Record (Overwrite)")
+        self.btn_record.setObjectName("recordButton")
+        self.btn_record.clicked.connect(self.on_record)
+
         self.btn_pause = QPushButton("||")
         self.btn_pause.setFixedSize(30, 25)
         self.btn_pause.setToolTip("Pause/Resume")
@@ -41,6 +47,7 @@ class PodWidget(QFrame):
         self.btn_stop.setObjectName("stopButton")
         self.btn_stop.clicked.connect(self.on_stop)
         
+        ctrl_layout.addWidget(self.btn_record)
         ctrl_layout.addWidget(self.btn_pause)
         ctrl_layout.addWidget(self.btn_stop)
         layout.addLayout(ctrl_layout)
@@ -56,6 +63,9 @@ class PodWidget(QFrame):
         self.timer.timeout.connect(self.update_ui_state)
         self.timer.start(100) # 10fps update
         
+    def on_record(self):
+        self.engine.looper_record(self.index)
+
     def on_trigger(self):
         self.engine.looper_trigger(self.index)
         self.update_ui_state() # Immediate update attempt

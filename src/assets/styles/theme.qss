@@ -245,15 +245,28 @@ QPushButton#pauseButton:pressed {
     background-color: #ffff00;
 }
 
-QPushButton#stopButton {
+QPushButton#recordButton {
     background-color: #aa0033;
     color: white;
     border: 1px solid #ff0055;
 }
-QPushButton#stopButton:hover {
+QPushButton#recordButton:hover {
     background-color: #cc0044;
     border: 1px solid #ff3377;
 }
-QPushButton#stopButton:pressed {
+QPushButton#recordButton:pressed {
     background-color: #ff0055;
+}
+
+QPushButton#stopButton {
+    background-color: #00aa33;
+    color: white;
+    border: 1px solid #00ff55;
+}
+QPushButton#stopButton:hover {
+    background-color: #00cc44;
+    border: 1px solid #33ff77;
+}
+QPushButton#stopButton:pressed {
+    background-color: #00ff55;
 }

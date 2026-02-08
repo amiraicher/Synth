@@ -20,6 +20,16 @@ class LooperPod:
         # Temp buffer for recording
         self.rec_buffer_list = []
 
+    def record(self):
+        """
+        Force start recording.
+        Clears previous data.
+        """
+        self.state = PodState.RECORDING
+        self.rec_buffer_list = []
+        self.buffer = None # Clear old buffer
+        self.play_head = 0
+
     def trigger(self):
         """
         Main trigger action (Pad Click).

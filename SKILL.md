@@ -28,6 +28,7 @@ The heart of the application, running in a dedicated audio thread via `sounddevi
 - **`looper.py`**: Handles multi-track audio recording and playback.
     - Synchronized with the audio callback.
     - Manages track states (Arm, Mute, Solo).
+    - **Recording:** explicitly triggered via `record()` button, overwriting existing data.
 
 ### 2. User Interface (`src/ui/`)
 Built with PySide6, orchestrating user interaction and visual feedback.
@@ -48,7 +49,10 @@ Built with PySide6, orchestrating user interaction and visual feedback.
 - **Definition:** `src/assets/styles/theme.qss`.
 - **Key Characteristics:**
     - Dark backgrounds (approx `#1e1e1e`, `#2b2b2b`).
-    - Neon accents (Cyan, Magenta) for active states and highlights.
+    - Neon accents (Cyan, Magenta, Green, Red) for active states and highlights.
+    - **Buttons:**
+        - Stop: Green (`#00aa33`).
+        - Record: Red (`#aa0033`).
     - Rounded corners and modern flatness.
 
 ## Key Interaction Flows
