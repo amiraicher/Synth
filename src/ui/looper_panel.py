@@ -32,11 +32,13 @@ class PodWidget(QFrame):
         self.btn_pause = QPushButton("||")
         self.btn_pause.setFixedSize(30, 25)
         self.btn_pause.setToolTip("Pause/Resume")
+        self.btn_pause.setObjectName("pauseButton")
         self.btn_pause.clicked.connect(self.on_pause)
         
         self.btn_stop = QPushButton("⬛")
         self.btn_stop.setFixedSize(30, 25)
         self.btn_stop.setToolTip("Stop")
+        self.btn_stop.setObjectName("stopButton")
         self.btn_stop.clicked.connect(self.on_stop)
         
         ctrl_layout.addWidget(self.btn_pause)
@@ -71,21 +73,26 @@ class PodWidget(QFrame):
         state = self.engine.looper_get_state(self.index)
         if state is None: return
         
+        state_str = "empty"
         if state == PodState.EMPTY:
             self.trigger_btn.setText("REC")
-            self.trigger_btn.setStyleSheet("background-color: #333333; color: white;")
+            state_str = "empty"
         elif state == PodState.RECORDING:
             self.trigger_btn.setText("REC...")
-            self.trigger_btn.setStyleSheet("background-color: #ff3333; color: white;")
+            state_str = "recording"
         elif state == PodState.PLAYING:
             self.trigger_btn.setText("PLAYING")
-            self.trigger_btn.setStyleSheet("background-color: #33ff33; color: black;")
+            state_str = "playing"
         elif state == PodState.PAUSED:
             self.trigger_btn.setText("PAUSED")
-            self.trigger_btn.setStyleSheet("background-color: #ffff33; color: black;")
+            state_str = "paused"
         elif state == PodState.STOPPED:
             self.trigger_btn.setText("PLAY")
-            self.trigger_btn.setStyleSheet("background-color: #3333ff; color: white;")
+            state_str = "stopped"
+            
+        self.trigger_btn.setProperty("loopState", state_str)
+        self.trigger_btn.style().unpolish(self.trigger_btn)
+        self.trigger_btn.style().polish(self.trigger_btn)
 
 
 class LooperPanel(QWidget):
@@ -102,7 +109,7 @@ class LooperPanel(QWidget):
         
         self.btn_stop_all = QPushButton("STOP ALL")
         self.btn_stop_all.setFixedSize(100, 30)
-        self.btn_stop_all.setStyleSheet("background-color: #cc0000; color: white; font-weight: bold;")
+        self.btn_stop_all.setObjectName("stopAllButton")
         self.btn_stop_all.clicked.connect(self.engine.looper_stop_all)
         header.addWidget(self.btn_stop_all)
         

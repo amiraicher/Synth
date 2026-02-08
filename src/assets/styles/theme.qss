@@ -181,3 +181,79 @@ QDockWidget::title {
     padding-left: 5px;
     border: 1px solid #00f0ff;
 }
+
+/* Looper Pods Styles */
+
+QPushButton[loopState="empty"] {
+    background-color: rgba(26, 26, 32, 100); /* Transparent Dark */
+    color: #404045;
+    border: 1px dashed #404045;
+}
+
+QPushButton[loopState="recording"] {
+    background-color: rgba(170, 0, 51, 150); /* Transparent Red */
+    color: white;
+    border: 1px solid #ff0055;
+}
+
+QPushButton[loopState="playing"] {
+    background-color: rgba(0, 204, 255, 150); /* Transparent Cyan */
+    color: #101014;
+    border: 1px solid #00f0ff;
+    font-weight: bold;
+}
+
+QPushButton[loopState="paused"] {
+    background-color: rgba(221, 170, 0, 150); /* Transparent Amber */
+    color: #101014;
+    border: 1px solid #ffaa00;
+}
+
+QPushButton[loopState="stopped"] {
+    background-color: rgba(32, 32, 40, 150); /* Transparent Blue-Grey */
+    color: #0088cc;
+    border: 1px solid #0088cc;
+}
+
+/* Stop All Button */
+QPushButton#stopAllButton {
+    background-color: #880000;
+    color: white;
+    border: 1px solid #aa0000;
+    font-weight: bold;
+}
+QPushButton#stopAllButton:hover {
+    background-color: #aa0000;
+    border: 1px solid #ff0000;
+}
+QPushButton#stopAllButton:pressed {
+    background-color: #ff0000;
+    color: black;
+}
+
+/* Pod Controls */
+QPushButton#pauseButton {
+    background-color: #ddaa00;
+    color: #101014;
+    border: 1px solid #ffaa00;
+}
+QPushButton#pauseButton:hover {
+    background-color: #ffcc00;
+    border: 1px solid #ffff00;
+}
+QPushButton#pauseButton:pressed {
+    background-color: #ffff00;
+}
+
+QPushButton#stopButton {
+    background-color: #aa0033;
+    color: white;
+    border: 1px solid #ff0055;
+}
+QPushButton#stopButton:hover {
+    background-color: #cc0044;
+    border: 1px solid #ff3377;
+}
+QPushButton#stopButton:pressed {
+    background-color: #ff0055;
+}
